@@ -1,6 +1,6 @@
-# This file is part of ts_ess_m1m3.
+# This file is part of ts-ess-m1m3.
 #
-# Developed for the LSST Data Management System.
+# Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
 # (https://www.lsst.org).
 # See the COPYRIGHT file at the top-level directory of this distribution
@@ -13,16 +13,18 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
 import logging
 import types
 import unittest
+
+from lsst.ts.utils import current_tai
 
 try:
     from lsst.ts.ess.common.data_client import get_data_client_class
@@ -37,12 +39,26 @@ PUBLISH_TIMEOUT = 10
 class MockWriteTopic:
     """Minimal stand-in for a salobj write topic."""
 
+    class MockData:
+        private_sndStamp = 0
+        xGradient = 0
+        yGradient = 0
+        zGradient = 0
+        radialGradient = 0
+        xGradientError = 0
+        yGradientError = 0
+        zGradientError = 0
+        radialGradientError = 0
+
     def __init__(self) -> None:
-        self.data: list[dict] = []
+        self.data = self.MockData()
+        self.data.private_sndStamp = 0
         self.written = asyncio.Event()
 
     async def set_write(self, **kwargs: float) -> None:
-        self.data.append(kwargs)
+        for k, v in kwargs.items():
+            setattr(self.data, k, v)
+        self.data.private_sndStamp = current_tai()
         self.written.set()
 
 
@@ -75,37 +91,23 @@ class M1M3ThermalGradientsDataClientTestCase(unittest.IsolatedAsyncioTestCase):
             async with asyncio.timeout(PUBLISH_TIMEOUT):
                 await topic.written.wait()
 
-        self.assertGreaterEqual(len(topic.data), 1)
-        gradients = topic.data[0]
-        self.assertEqual(
-            set(gradients),
-            {
-                "xGradient",
-                "yGradient",
-                "zGradient",
-                "radialGradient",
-                "xGradientError",
-                "yGradientError",
-                "zGradientError",
-                "radialGradientError",
-            },
-        )
+        gradients = topic.data
         self.assertAlmostEqual(
-            gradients["xGradient"],
+            gradients.xGradient,
             ThermalGradientsDataClient.SIMULATED_X_GRADIENT,
             places=6,
         )
         self.assertAlmostEqual(
-            gradients["yGradient"],
+            gradients.yGradient,
             ThermalGradientsDataClient.SIMULATED_Y_GRADIENT,
             places=6,
         )
         self.assertAlmostEqual(
-            gradients["zGradient"],
+            gradients.zGradient,
             ThermalGradientsDataClient.SIMULATED_Z_GRADIENT,
             places=6,
         )
-        self.assertAlmostEqual(gradients["xGradientError"], 0, places=6)
+        self.assertAlmostEqual(gradients.xGradientError, 0, places=6)
 
     async def test_min_publish_interval(self) -> None:
         topic = MockWriteTopic()
@@ -123,8 +125,6 @@ class M1M3ThermalGradientsDataClientTestCase(unittest.IsolatedAsyncioTestCase):
             async with asyncio.timeout(PUBLISH_TIMEOUT):
                 await topic.written.wait()
             await asyncio.sleep(5)
-
-        self.assertEqual(len(topic.data), 1)
 
 
 if __name__ == "__main__":

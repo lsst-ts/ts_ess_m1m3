@@ -1,6 +1,6 @@
-# This file is part of ts_ess_m1m3.
+# This file is part of ts-ess-m1m3.
 #
-# Developed for the LSST Data Management System.
+# Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
 # (https://www.lsst.org).
 # See the COPYRIGHT file at the top-level directory of this distribution
@@ -13,11 +13,11 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
 
@@ -26,13 +26,12 @@ __all__ = ["ThermalGradientsDataClient"]
 import asyncio
 import functools
 import logging
-import math
 import types
 import typing
 
 import yaml
 
-from lsst.ts import utils
+from lsst.ts import salobj, utils
 from lsst.ts.ess.common.data_client import BaseReadLoopDataClient
 from lsst.ts.m1m3.utils import ThermocoupleCache, fit_thermal_gradients, thermocouple_z_position
 from lsst.ts.xml.tables.m1m3 import (
@@ -53,15 +52,15 @@ class ThermalGradientsDataClient(BaseReadLoopDataClient):
     """Compute M1M3 glass thermal gradients from the thermal scanner
     temperatures and publish them as ESS.m1m3ThermalGradients telemetry.
 
-    Subscribes to the ESS.temperature telemetry published by the four
-    M1M3 GEC thermal scanner instances (SAL indices 114-117), caches the
-    per-thermocouple temperatures in a `ThermocoupleCache` and - whenever
-    a valid (complete and fresh) set of thermocouple values is available -
-    fits thermal gradients with `fit_thermal_gradients` and writes the
+    This component subscribes to the ESS.temperature telemetry that four M1M3
+    GEC thermal scanner instances (SAL indices 114–117) publish. It caches the
+    per-thermocouple temperatures in a ThermocoupleCache, fits thermal
+    gradients with fit_thermal_gradients whenever a valid (complete and fresh)
+    set of thermocouple values is available, and writes the
     ESS.m1m3ThermalGradients topic.
 
-    Also subscribes to the MTM1M3TS.airNozzles event to keep the air
-    nozzle table current, so thermocouples in cells with nonstandard air
+    The component also subscribes to the MTM1M3TS.airNozzles event to keep the
+    air nozzle table current, so thermocouples in cells with nonstandard air
     nozzle configurations can be excluded from the fit.
 
     Parameters
@@ -107,7 +106,6 @@ class ThermalGradientsDataClient(BaseReadLoopDataClient):
             max_data_age=self.config.max_data_age,
             max_missing=self.config.max_missing,
         )
-        self.last_published_timestamp = -math.inf
 
         self._queue: asyncio.Queue[tuple[int, typing.Any]] = asyncio.Queue()
         self._remotes: list[salobj.Remote] = []
@@ -185,13 +183,14 @@ additionalProperties: false
         return f"scanners {[int(scanner) for scanner in Scanner]} -> ESS.m1m3ThermalGradients"
 
     async def connect(self) -> None:
+        """Connect to M1M3 GEC Thermal Scanner ESS CSCs and setup callbacks for
+        new temperature measurements. Scanners ESS indices are listed in
+        lsst.ts.xml.tables.m1m3.Scanner. If remove_nonstandard_cells option is
+        set, connect also to M1M3TS and setup callback for airNozzles event -
+        so the nozzles orifices diameters are updated."""
         if self.simulation_mode > 0:
             self._simulation_task = asyncio.create_task(self._simulation_loop())
         else:
-            # Import here so this module can be used (e.g. in simulation
-            # mode) without a full salobj installation.
-            from lsst.ts import salobj
-
             domain = getattr(self.topics, "domain", None)
             if domain is None:
                 raise RuntimeError("topics has no domain; cannot create remotes for the thermal scanners")
@@ -239,7 +238,7 @@ additionalProperties: false
         set_air_nozzles_types_and_orifice_diameters(data)
 
     async def read_data(self) -> None:
-        """Process one ESS.temperature message; publish gradients when a
+        """Process one ESS.temperature message. Publish gradients when a
         valid set of thermocouple temperatures is completed.
         """
         async with asyncio.timeout(self.read_timeout):
@@ -272,7 +271,10 @@ additionalProperties: false
             return
 
         newest = self.cache.newest_timestamp
-        if newest - self.last_published_timestamp < self.config.min_publish_interval:
+        if (
+            newest - self.topics.tel_m1m3ThermalGradients.data.private_sndStamp
+            < self.config.min_publish_interval
+        ):
             return
 
         gradients = fit_thermal_gradients(
@@ -291,7 +293,6 @@ additionalProperties: false
             zGradientError=gradients.z_gradient_err,
             radialGradientError=gradients.radial_gradient_err,
         )
-        self.last_published_timestamp = newest
 
     def _simulated_temperature(self, scanner: Scanner, channel: int) -> float:
         """Return the simulated temperature for one scanner channel."""

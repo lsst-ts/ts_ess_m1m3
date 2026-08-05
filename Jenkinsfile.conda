@@ -1,2 +1,2 @@
 @Library('JenkinsShared')_
-CondaPipeline(["ts_config_mttcs"], "ts-mtaircompressor", "lsst.ts.MTAirCompressor", "noarch")
+CondaPipeline([], "ts-ess-m1m3", "lsst.ts.ess.m1m3", "noarch")

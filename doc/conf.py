@@ -19,9 +19,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-try:
-    from .version import __version__
-except ImportError:
-    __version__ = "?"
+"""Sphinx configuration file for an LSST stack package.
 
-from .thermal_gradients_data_client import ThermalGradientsDataClient
+This configuration only affects single-package Sphinx documentation builds.
+"""
+
+import lsst.ts.ess.m1m3  # noqa
+from documenteer.conf.guide import *  # noqa
+
+project = "ts_ess_m1m3"
+html_theme_options["logotext"] = project  # type: ignore # noqa
+html_title = project
+html_short_title = project
+
+intersphinx_mapping["ts_salobj"] = ("https://ts-salobj.lsst.io", None)  # type: ignore # noqa
+intersphinx_mapping["ts_ess_common"] = ("https://ts-ess-common.lsst.io", None)  # type: ignore # noqa
