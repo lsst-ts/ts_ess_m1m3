@@ -1,0 +1,38 @@
+{% set data= load_setup_py_data() %}
+
+package:
+  name: ts-ess-m1m3
+  version: {{ data.get('version') }}
+
+source:
+  path: ../
+
+build:
+  noarch: python
+  script: {{ PYTHON }} -m pip install --no-deps --ignore-installed .
+  string: "py{{ PY_VER | replace('.', '') }}{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
+
+test:
+  requires:
+    - ts-conda-build ==0.5
+    - ts-xml
+    - ts-salobj {{ salobj_version }}
+  source_files:
+    - pyproject.toml
+    - python
+    - tests
+  commands:
+    - pytest
+
+requirements:
+  host:
+    - pip
+    - python {{ python }}
+    - setuptools >={{ setuptools}}
+    - setuptools_scm ={{ setuptools_scm}}
+  run:
+    - python {{ python }}
+    - ts-ess-common
+    - ts-m1m3-utils >= 0.7.0
+    - ts-salobj {{ salobj_version }}
+    - ts-xml

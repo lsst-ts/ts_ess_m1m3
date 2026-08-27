@@ -1,0 +1,27 @@
+[build-system]
+requires = [ "setuptools>=64", "setuptools_scm>=8" ]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ts-ess-m1m3"
+description = "LSST M1M3 ESS infrastructure."
+license = { text = "GPL" }
+classifiers = [ "Programming Language :: Python :: 3" ]
+dependencies = []
+readme = "README.rst"
+urls = { documentation = "https://ts-ess-m1m3.lsst.io", source_code = "https://github.com/lsst-ts/ts_ess_m1m3" }
+dynamic = [ "version" ]
+
+[tool.setuptools.dynamic]
+version = { attr = "setuptools_scm.get_version" }
+
+[tool.setuptools.packages.find]
+where = [ "python" ]
+
+[tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[project.optional-dependencies]
+dev = ["documenteer[pipelines]"]
