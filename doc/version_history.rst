@@ -8,6 +8,15 @@ Version History
 
 .. towncrier release notes start
 
+v0.1.2 (2026-11-02)
+===================
+
+Performance Enhancement
+-----------------------
+
+- In setup.py set local scheme to no local version. (`SSW-3097 <https://rubinobs.atlassian.net//browse/SSW-3097>`_)
+
+
 v0.1.1 (2026-09-21)
 ===================
 
