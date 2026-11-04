@@ -33,6 +33,6 @@ requirements:
   run:
     - python {{ python }}
     - ts-ess-common
-    - ts-m1m3-utils >= 0.7.0
+    - ts-m1m3-utils >=0.7.0
     - ts-salobj {{ salobj_version }}
     - ts-xml
