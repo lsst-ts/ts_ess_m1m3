@@ -1,0 +1,7 @@
+setupRequired(ts_ess_common)
+setupRequired(ts_m1m3_utils)
+setupRequired(ts_salobj)
+setupRequired(ts_utils)
+setupRequired(ts_xml)
+
+envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
