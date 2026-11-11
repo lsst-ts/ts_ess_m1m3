@@ -8,6 +8,16 @@ Version History
 
 .. towncrier release notes start
 
+v0.1.4 (2026-11-11)
+===================
+
+Other Changes and Additions
+---------------------------
+
+- Populate ups directory. (`SSW-3158 <https://rubinobs.atlassian.net//browse/SSW-3158>`_)
+- Fixed ts-m1m3-utils conda version constraint.
+
+
 v0.1.2 (2026-11-02)
 ===================
 
