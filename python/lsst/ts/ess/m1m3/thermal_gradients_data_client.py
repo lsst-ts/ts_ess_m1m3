@@ -243,10 +243,12 @@ additionalProperties: false
         """
         async with asyncio.timeout(self.read_timeout):
             messages = [await self._queue.get()]
+            self._queue.task_done()
         # Scanners publish their channels as a burst of messages;
         # process everything that has arrived.
         while not self._queue.empty():
             messages.append(self._queue.get_nowait())
+            self._queue.task_done()
 
         updated = False
         for sal_index, data in messages:
