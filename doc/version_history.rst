@@ -8,6 +8,15 @@ Version History
 
 .. towncrier release notes start
 
+v0.1.5 (2026-11-25)
+===================
+
+Bug Fixes
+---------
+
+- Call task_done for all queue.put calls. (`SSW-3251 <https://rubinobs.atlassian.net//browse/SSW-3251>`_)
+
+
 v0.1.4 (2026-11-11)
 ===================
 
